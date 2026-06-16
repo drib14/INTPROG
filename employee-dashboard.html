@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EMS Employee Workspace | Overview</title>
+  
+  <!-- CSS Stylesheets -->
+  <link rel="stylesheet" href="styles/global.css">
+  <link rel="stylesheet" href="styles/app.css">
+  <link rel="stylesheet" href="styles/employees.css">
+  
+  <!-- Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Mobile Sidebar Drawer Overlay -->
+    <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleMobileSidebar()"></div>
+
+    <!-- Reusable Sidebar Navigation (Restricted for Employees) -->
+    <aside id="sidebar" class="sidebar">
+      <div class="sidebar-brand">
+        <div class="logo-icon"><i class="fa-solid fa-people-roof"></i></div>
+        <span>EMS Platform</span>
+      </div>
+
+      <div class="sidebar-user">
+        <img id="user-avatar" src="https://api.dicebear.com/7.x/adventurer/svg?seed=placeholder" alt="User Avatar">
+        <div class="sidebar-user-info">
+          <span id="user-name" class="sidebar-user-name">Loading...</span>
+          <span id="user-role" class="sidebar-user-role">Employee</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-menu-wrapper">
+        <ul class="sidebar-menu">
+          <li class="sidebar-menu-item active" id="nav-dashboard">
+            <a href="dashboard.html"><i class="fa-solid fa-chart-pie"></i> <span>Dashboard</span></a>
+          </li>
+          <li class="sidebar-menu-item" id="nav-employees">
+            <a href="employees.html"><i class="fa-solid fa-users"></i> <span>Coworkers</span></a>
+          </li>
+          <li class="sidebar-menu-item" id="nav-departments">
+            <a href="departments.html"><i class="fa-solid fa-sitemap"></i> <span>Departments</span></a>
+          </li>
+          <li class="sidebar-menu-item" id="nav-payroll">
+            <a href="payroll.html"><i class="fa-solid fa-wallet"></i> <span id="payroll-nav-title">Payroll</span></a>
+          </li>
+          <li class="sidebar-menu-item" id="nav-settings">
+            <a href="settings.html"><i class="fa-solid fa-gear"></i> <span>Settings</span></a>
+          </li>
+        </ul>
+      </nav>
+
+      <div class="sidebar-footer">
+        <button onclick="Auth.logout()" class="btn sidebar-logout">
+          <i class="fa-solid fa-arrow-right-from-bracket"></i> <span>Log Out</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Content Screen panel -->
+    <main class="content-wrapper">
+      <!-- App Header Bar -->
+      <header class="app-header">
+        <div style="display: flex; align-items: center; gap: 16px;">
+          <button class="header-btn menu-toggle-btn" onclick="toggleMobileSidebar()">
+            <i class="fa-solid fa-bars"></i>
+          </button>
+          <div class="header-title">
+            <h1>Employee Workspace</h1>
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <button id="theme-toggle" class="header-btn" onclick="toggleTheme()" title="Toggle Theme">
+            <i class="fa-solid fa-moon"></i>
+          </button>
+          <button class="header-btn" onclick="Auth.showToast('No new notifications.', 'info')" title="Notifications">
+            <i class="fa-solid fa-bell"></i>
+          </button>
+        </div>
+      </header>
+
+      <!-- Main Layout Body -->
+      <div class="main-content">
+        <!-- Personal KPI Metrics Panels Grid -->
+        <section class="metrics-grid">
+          <!-- Employee ID -->
+          <div class="metric-card glass-panel metric-card-primary">
+            <div class="metric-card-info-content">
+              <h3>Your Employee ID</h3>
+              <div id="stat-emp-id" class="metric-value">20260001</div>
+              <div class="metric-trend text-muted">
+                <span>Profile credential</span>
+              </div>
+            </div>
+            <div class="metric-card-icon"><i class="fa-solid fa-id-card"></i></div>
+          </div>
+
+          <!-- Department -->
+          <div class="metric-card glass-panel metric-card-info">
+            <div class="metric-card-info-content">
+              <h3>Your Department</h3>
+              <div id="stat-emp-dept" class="metric-value">ENG</div>
+              <div class="metric-trend text-muted">
+                <span id="stat-emp-dept-name">Division</span>
+              </div>
+            </div>
+            <div class="metric-card-icon"><i class="fa-solid fa-sitemap"></i></div>
+          </div>
+
+          <!-- Attendance Status -->
+          <div class="metric-card glass-panel metric-card-success">
+            <div class="metric-card-info-content">
+              <h3>Shift Status</h3>
+              <div id="stat-attendance-status" class="metric-value">Offline</div>
+              <div class="metric-trend text-muted">
+                <span>Attendance check</span>
+              </div>
+            </div>
+            <div class="metric-card-icon"><i class="fa-solid fa-calendar-check"></i></div>
+          </div>
+
+          <!-- Clocked-in Time -->
+          <div class="metric-card glass-panel metric-card-warning">
+            <div class="metric-card-info-content">
+              <h3>Clocked In At</h3>
+              <div id="stat-checkin-time" class="metric-value">--:--</div>
+              <div class="metric-trend text-muted">
+                <span>Office Cutoff: 9:00 AM</span>
+              </div>
+            </div>
+            <div class="metric-card-icon"><i class="fa-solid fa-clock"></i></div>
+          </div>
+        </section>
+
+        <!-- Attendance & Leaves Split Grid -->
+        <section class="dashboard-grid">
+          <!-- Left side: Live clock attendance portal -->
+          <div class="dashboard-card glass-panel" style="justify-content: flex-start; min-height: 400px; padding: 24px;">
+            <div class="dashboard-card-title">
+              <h2>Smart Clocking Terminal</h2>
+              <span id="attendance-live-date" class="text-muted" style="font-size: 0.85rem; font-weight: 500;"></span>
+            </div>
+            
+            <div id="attendance-portal-body" style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
+              <!-- Dynamically populated clock modules -->
+            </div>
+          </div>
+
+          <!-- Right side: Leaves Management console -->
+          <div class="dashboard-card glass-panel" style="justify-content: flex-start; min-height: 400px; padding: 24px;">
+            <div class="dashboard-card-title" style="margin-bottom: 16px;">
+              <h2>Leave Requests</h2>
+              <button onclick="openApplyLeaveModal()" class="btn btn-primary" style="padding: 6px 12px; font-size: 0.8rem;">
+                <i class="fa-solid fa-circle-plus"></i> Apply Leave
+              </button>
+            </div>
+            
+            <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+              <div class="table-container" style="flex: 1; margin-bottom: 0; max-height: 280px; overflow-y: auto; border-radius: var(--border-radius-md);">
+                <table class="ems-table" style="font-size: 0.85rem;">
+                  <thead>
+                    <tr>
+                      <th>Type</th>
+                      <th>Dates</th>
+                      <th>Reason</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="personal-leaves-body">
+                    <!-- Logs populated dynamically -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Colleague Directory Quickview Widget -->
+        <section class="glass-panel" style="padding: 24px;">
+          <div class="dashboard-card-title" style="margin-bottom: 20px;">
+            <h2>Team Coworkers Directory</h2>
+            <a href="employees.html" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">
+              View Directory <i class="fa-solid fa-arrow-right"></i>
+            </a>
+          </div>
+          <div id="coworker-directory-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px;">
+            <!-- Seed list of team coworkers -->
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <!-- Apply for Leave Modal -->
+  <div id="leave-modal" class="modal-overlay">
+    <div class="modal-content glass-panel" style="max-width: 480px;">
+      <div class="modal-header">
+        <h2>Apply for Leave</h2>
+        <button class="modal-close" onclick="closeApplyLeaveModal()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      
+      <form id="leave-form" onsubmit="handleLeaveSubmit(event)">
+        <div class="form-group">
+          <label class="form-label" for="leave-type">Leave Type</label>
+          <select id="leave-type" class="form-control" required>
+            <option value="Sick Leave">Sick Leave</option>
+            <option value="Vacation Leave">Vacation Leave</option>
+            <option value="Casual Leave">Casual Leave</option>
+            <option value="Emergency Leave">Emergency Leave</option>
+          </select>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" for="leave-start">Start Date</label>
+            <input type="date" id="leave-start" class="form-control" required>
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" for="leave-end">End Date</label>
+            <input type="date" id="leave-end" class="form-control" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="leave-reason">Reason</label>
+          <textarea id="leave-reason" class="form-control" rows="3" placeholder="State your reasons for leave request..." required style="resize: vertical; min-height: 80px;"></textarea>
+        </div>
+
+        <div class="modal-form-actions">
+          <button type="button" class="btn btn-secondary" onclick="closeApplyLeaveModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Submit Request</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Javascript Modules -->
+  <script src="js/database.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/employee-dashboard.js"></script>
+  <script>
+    function toggleMobileSidebar() {
+      const sidebar = document.getElementById("sidebar");
+      const overlay = document.getElementById("sidebar-overlay");
+      sidebar.classList.toggle("open");
+      overlay.classList.toggle("open");
+    }
+
+    function toggleTheme() {
+      const body = document.body;
+      const themeIcon = document.querySelector("#theme-toggle i");
+      if (body.classList.contains("light-theme")) {
+        body.classList.remove("light-theme");
+        localStorage.setItem("ems_theme", "dark");
+        themeIcon.className = "fa-solid fa-sun";
+      } else {
+        body.classList.add("light-theme");
+        localStorage.setItem("ems_theme", "light");
+        themeIcon.className = "fa-solid fa-moon";
+      }
+    }
+
+    (function initTheme() {
+      const savedTheme = localStorage.getItem("ems_theme") || "dark";
+      const body = document.body;
+      const themeIcon = document.querySelector("#theme-toggle i");
+      if (savedTheme === "light") {
+        body.classList.add("light-theme");
+        themeIcon.className = "fa-solid fa-moon";
+      } else {
+        body.classList.remove("light-theme");
+        themeIcon.className = "fa-solid fa-sun";
+      }
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EMS Dashboard | Departments</title>
+  
+  <!-- CSS Stylesheets -->
+  <link rel="stylesheet" href="styles/global.css">
+  <link rel="stylesheet" href="styles/app.css">
+  <link rel="stylesheet" href="styles/employees.css">
+  
+  <!-- Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Mobile Sidebar Drawer Overlay -->
+    <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleMobileSidebar()"></div>
+
+    <!-- Sidebar Navigation -->
+    <aside id="sidebar" class="sidebar">
+      <div class="sidebar-brand">
+        <div class="logo-icon"><i class="fa-solid fa-people-roof"></i></div>
+        <span>EMS Platform</span>
+      </div>
+
+      <div class="sidebar-user">
+        <img id="user-avatar" src="https://api.dicebear.com/7.x/adventurer/svg?seed=admin" alt="User Avatar">
+        <div class="sidebar-user-info">
+          <span id="user-name" class="sidebar-user-name">Loading...</span>
+          <span id="user-role" class="sidebar-user-role">Guest</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-menu-wrapper">
+        <ul class="sidebar-menu">
+          <li class="sidebar-menu-item" id="nav-dashboard">
+            <a href="dashboard.html"><i class="fa-solid fa-chart-pie"></i> <span>Dashboard</span></a>
+          </li>
+          <li class="sidebar-menu-item" id="nav-employees">
+            <a href="employees.html"><i class="fa-solid fa-users"></i> <span>Employees</span></a>
+          </li>
+          <li class="sidebar-menu-item active" id="nav-departments">
+            <a href="departments.html"><i class="fa-solid fa-sitemap"></i> <span>Departments</span></a>
+          </li>
+          <li class="sidebar-menu-item" id="nav-payroll">
+            <a href="payroll.html"><i class="fa-solid fa-wallet"></i> <span id="payroll-nav-title">Payroll</span></a>
+          </li>
+          <li class="sidebar-menu-item" id="nav-settings">
+            <a href="settings.html"><i class="fa-solid fa-gear"></i> <span>Settings</span></a>
+          </li>
+        </ul>
+      </nav>
+
+      <div class="sidebar-footer">
+        <button onclick="Auth.logout()" class="btn sidebar-logout">
+          <i class="fa-solid fa-arrow-right-from-bracket"></i> <span>Log Out</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Content Screen panel -->
+    <main class="content-wrapper">
+      <!-- App Header Bar -->
+      <header class="app-header">
+        <div style="display: flex; align-items: center; gap: 16px;">
+          <button class="header-btn menu-toggle-btn" onclick="toggleMobileSidebar()">
+            <i class="fa-solid fa-bars"></i>
+          </button>
+          <div class="header-title">
+            <h1>Department Directory</h1>
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <button id="theme-toggle" class="header-btn" onclick="toggleTheme()" title="Toggle Theme">
+            <i class="fa-solid fa-moon"></i>
+          </button>
+          <button class="header-btn" onclick="Auth.showToast('No new notifications.', 'info')" title="Notifications">
+            <i class="fa-solid fa-bell"></i>
+          </button>
+        </div>
+      </header>
+
+      <!-- Main Layout Body -->
+      <div class="main-content">
+        <!-- Action and Filter Bar -->
+        <section class="glass-panel filter-bar">
+          <div class="filter-group">
+            <!-- Search bar -->
+            <div class="search-wrapper">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" id="dept-search" class="form-control" placeholder="Search by name, code..." oninput="handleSearch()">
+            </div>
+          </div>
+
+          <!-- Add department button trigger -->
+          <button class="btn btn-primary" onclick="openAddModal()">
+            <i class="fa-solid fa-folder-plus"></i> Add Department
+          </button>
+        </section>
+
+        <!-- Department Cards Grid -->
+        <section id="departments-grid" class="departments-grid">
+          <!-- Dynamically populated cards -->
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <!-- Add / Edit Department Modal -->
+  <div id="dept-modal" class="modal-overlay">
+    <div class="modal-content glass-panel" style="max-width: 500px;">
+      <div class="modal-header">
+        <h2 id="modal-title">Add New Department</h2>
+        <button class="modal-close" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <form id="dept-form" onsubmit="handleFormSubmit(event)">
+        <!-- Hidden input for ID tracking -->
+        <input type="hidden" id="dept-id">
+
+        <div class="form-group">
+          <label class="form-label" for="dept-name">Department Name</label>
+          <input type="text" id="dept-name" class="form-control" placeholder="Engineering" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="dept-code">Department Code</label>
+          <input type="text" id="dept-code" class="form-control" placeholder="ENG" maxlength="5" required>
+          <p class="form-helper">Maximum 5 alphanumeric characters (e.g. SALES, ENG, HR)</p>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="dept-manager">Department Manager</label>
+          <input type="text" id="dept-manager" class="form-control" placeholder="Sarah Jenkins" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="dept-desc">Description</label>
+          <textarea id="dept-desc" class="form-control" rows="3" placeholder="Describe the department's core focus and goals..." required style="resize: vertical; min-height: 80px;"></textarea>
+        </div>
+
+        <div class="modal-form-actions">
+          <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="modal-submit-btn">Save Department</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Custom Delete Confirmation Modal -->
+  <div id="delete-modal" class="modal-overlay">
+    <div class="modal-content glass-panel" style="max-width: 400px; text-align: center;">
+      <div style="color: var(--danger); font-size: 3rem; margin-bottom: 16px;">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+      </div>
+      <h2 style="font-size: 1.3rem; margin-bottom: 8px;">Remove Department</h2>
+      <p style="color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 24px; line-height: 1.5;">
+        Are you sure you want to delete <strong id="delete-dept-name" style="color: var(--text-primary);"></strong>? This will remove the department definition from the system.
+      </p>
+      <div style="display: flex; gap: 12px; justify-content: center;">
+        <button class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+        <button class="btn btn-danger" id="delete-confirm-btn">Yes, Remove</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Javascript Modules -->
+  <script src="js/database.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/departments.js"></script>
+  <script>
+    // Mobile Navigation & themes
+    function toggleMobileSidebar() {
+      const sidebar = document.getElementById("sidebar");
+      const overlay = document.getElementById("sidebar-overlay");
+      sidebar.classList.toggle("open");
+      overlay.classList.toggle("open");
+    }
+
+    // Theme switching handler
+    function toggleTheme() {
+      const body = document.body;
+      const themeIcon = document.querySelector("#theme-toggle i");
+      
+      if (body.classList.contains("light-theme")) {
+        body.classList.remove("light-theme");
+        localStorage.setItem("ems_theme", "dark");
+        themeIcon.className = "fa-solid fa-sun";
+      } else {
+        body.classList.add("light-theme");
+        localStorage.setItem("ems_theme", "light");
+        themeIcon.className = "fa-solid fa-moon";
+      }
+    }
+
+    // Load initial theme choice on mount
+    (function initTheme() {
+      const savedTheme = localStorage.getItem("ems_theme") || "dark";
+      const body = document.body;
+      const themeIcon = document.querySelector("#theme-toggle i");
+      
+      if (savedTheme === "light") {
+        body.classList.add("light-theme");
+        themeIcon.className = "fa-solid fa-moon";
+      } else {
+        body.classList.remove("light-theme");
+        themeIcon.className = "fa-solid fa-sun";
+      }
+    })();
+  </script>
+</body>
+</html>
