@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+
+# Environment Variables
+.env
+
+# Build Files
+client/build/
+dist/
+
+# Logs
+*.log
+
+# Coverage
+coverage/
+
+# Uploads
+uploads/
+
+# IDE
+.vscode/
+.idea/
+
+# OS Files
+.DS_Store
+Thumbs.db

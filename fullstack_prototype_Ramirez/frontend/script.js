@@ -45,7 +45,7 @@
     },
 
     notify() {
-      this.listeners.forEach(fn => fn(this.state));
+      this.listeners.forEach((fn) => fn(this.state));
     },
 
     save() {
@@ -72,12 +72,25 @@
             password: "Password123!",
             role: "user",
             verified: true,
-          }
+          },
         ],
         departments: [
-          { id: 1, name: "Engineering", description: "Software development and deployment operations" },
-          { id: 2, name: "HR", description: "Human Resource acquisition and employee benefits administration" },
-          { id: 3, name: "Finance", description: "Accounting, payroll, and asset management" }
+          {
+            id: 1,
+            name: "Engineering",
+            description: "Software development and deployment operations",
+          },
+          {
+            id: 2,
+            name: "HR",
+            description:
+              "Human Resource acquisition and employee benefits administration",
+          },
+          {
+            id: 3,
+            name: "Finance",
+            description: "Accounting, payroll, and asset management",
+          },
         ],
         employees: [],
         requests: [],
@@ -86,48 +99,71 @@
     },
 
     // Accounts
-    getAccounts() { return this.state.accounts; },
-    findAccountByEmail(email) { return this.state.accounts.find(a => a.email === email); },
+    getAccounts() {
+      return this.state.accounts;
+    },
+    findAccountByEmail(email) {
+      return this.state.accounts.find((a) => a.email === email);
+    },
     addAccount(account) {
       this.state.accounts.push(account);
       this.save();
     },
     deleteAccount(email) {
-      this.state.accounts = this.state.accounts.filter(a => a.email !== email);
-      this.state.employees = this.state.employees.filter(e => e.email !== email);
+      this.state.accounts = this.state.accounts.filter(
+        (a) => a.email !== email,
+      );
+      this.state.employees = this.state.employees.filter(
+        (e) => e.email !== email,
+      );
       this.save();
     },
 
     // Departments
-    getDepartments() { return this.state.departments; },
+    getDepartments() {
+      return this.state.departments;
+    },
     addDepartment(name, description) {
-      const maxId = this.state.departments.reduce((max, d) => d.id > max ? d.id : max, 0);
+      const maxId = this.state.departments.reduce(
+        (max, d) => (d.id > max ? d.id : max),
+        0,
+      );
       this.state.departments.push({ id: maxId + 1, name, description });
       this.save();
     },
     deleteDepartment(id) {
-      this.state.departments = this.state.departments.filter(d => d.id !== id);
+      this.state.departments = this.state.departments.filter(
+        (d) => d.id !== id,
+      );
       this.save();
     },
 
     // Employees
-    getEmployees() { return this.state.employees; },
-    findEmployeeById(empId) { return this.state.employees.find(e => e.empId === empId); },
+    getEmployees() {
+      return this.state.employees;
+    },
+    findEmployeeById(empId) {
+      return this.state.employees.find((e) => e.empId === empId);
+    },
     addEmployee(employee) {
       this.state.employees.push(employee);
       this.save();
     },
     deleteEmployee(empId) {
-      this.state.employees = this.state.employees.filter(e => e.empId !== empId);
+      this.state.employees = this.state.employees.filter(
+        (e) => e.empId !== empId,
+      );
       this.save();
     },
 
     // Requests
-    getRequests() { return this.state.requests; },
+    getRequests() {
+      return this.state.requests;
+    },
     addRequest(request) {
       this.state.requests.push(request);
       this.save();
-    }
+    },
   };
 
   // Authentication Service
@@ -161,9 +197,13 @@
         navUsername.textContent = user ? user.firstName : "User";
       }
 
-      const dashboardWelcomeMsg = document.getElementById("dashboardWelcomeMsg");
+      const dashboardWelcomeMsg = document.getElementById(
+        "dashboardWelcomeMsg",
+      );
       if (dashboardWelcomeMsg) {
-        dashboardWelcomeMsg.textContent = user ? `Welcome back, ${user.firstName}!` : "Welcome back!";
+        dashboardWelcomeMsg.textContent = user
+          ? `Welcome back, ${user.firstName}!`
+          : "Welcome back!";
       }
     },
 
@@ -174,7 +214,11 @@
       }
       if (!acc.verified) {
         localStorage.setItem("unverified_email", email);
-        return { success: false, unverified: true, message: "Email address is not verified." };
+        return {
+          success: false,
+          unverified: true,
+          message: "Email address is not verified.",
+        };
       }
 
       localStorage.setItem("auth_token", email);
@@ -185,7 +229,7 @@
     logout() {
       localStorage.removeItem("auth_token");
       this.setSession(null);
-    }
+    },
   };
 
   // Router
@@ -221,9 +265,15 @@
         return;
       }
 
-      if (this.admin.includes(route) && (!AuthService.currentUser || AuthService.currentUser.role !== "admin")) {
+      if (
+        this.admin.includes(route) &&
+        (!AuthService.currentUser || AuthService.currentUser.role !== "admin")
+      ) {
         this.navigateTo("#/");
-        UI.toast("Access denied: Administrative privileges required.", "danger");
+        UI.toast(
+          "Access denied: Administrative privileges required.",
+          "danger",
+        );
         return;
       }
 
@@ -240,7 +290,7 @@
 
     renderCurrentRoute() {
       UI.renderPage(this.getActiveRoute());
-    }
+    },
   };
 
   // UI rendering
@@ -248,7 +298,7 @@
     showModal(modalId) {
       const modal = document.getElementById(modalId);
       if (!modal) return;
-      
+
       document.querySelectorAll(".modal.show").forEach((m) => {
         if (m.id !== modalId) this.hideModal(m.id);
       });
@@ -258,13 +308,13 @@
       modal.setAttribute("aria-modal", "true");
       modal.setAttribute("role", "dialog");
       modal.removeAttribute("aria-hidden");
-      
+
       let backdrop = document.querySelector(".modal-backdrop");
       if (!backdrop) {
         backdrop = document.createElement("div");
         backdrop.className = "modal-backdrop fade show";
         document.body.appendChild(backdrop);
-        
+
         backdrop.addEventListener("click", () => {
           this.hideModal(modalId);
         });
@@ -279,7 +329,7 @@
       modal.setAttribute("aria-hidden", "true");
       modal.removeAttribute("aria-modal");
       modal.removeAttribute("role");
-      
+
       const backdrop = document.querySelector(".modal-backdrop");
       if (backdrop) {
         backdrop.remove();
@@ -292,7 +342,8 @@
       const toastIcon = document.getElementById("toastIcon");
 
       toastMsgText.textContent = message;
-      toastElement.className = "toast align-items-center border-0 shadow text-white";
+      toastElement.className =
+        "toast align-items-center border-0 shadow text-white";
 
       if (type === "success") {
         toastElement.classList.add("bg-success");
@@ -313,11 +364,15 @@
     },
 
     hideAllForms() {
-      document.querySelectorAll(".app-card-form").forEach(card => card.classList.add("d-none"));
+      document
+        .querySelectorAll(".app-card-form")
+        .forEach((card) => card.classList.add("d-none"));
     },
 
     renderPage(route) {
-      document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+      document
+        .querySelectorAll(".page")
+        .forEach((p) => p.classList.remove("active"));
 
       const targetId = (route === "/" ? "home" : route.substring(1)) + "-page";
       const page = document.getElementById(targetId);
@@ -365,7 +420,9 @@
         const accountsCount = Store.getAccounts().length;
         const deptsCount = Store.getDepartments().length;
         const empsCount = Store.getEmployees().length;
-        const pendingReqsCount = Store.getRequests().filter(r => r.status === "Pending").length;
+        const pendingReqsCount = Store.getRequests().filter(
+          (r) => r.status === "Pending",
+        ).length;
 
         statsGrid.innerHTML = `
           <div class="col-md-6 col-lg-3">
@@ -406,10 +463,16 @@
           </div>
         `;
       } else {
-        const requests = Store.getRequests().filter(r => r.employeeEmail === user.email);
+        const requests = Store.getRequests().filter(
+          (r) => r.employeeEmail === user.email,
+        );
         const totalRequests = requests.length;
-        const pendingCount = requests.filter(r => r.status === "Pending").length;
-        const approvedCount = requests.filter(r => r.status === "Approved").length;
+        const pendingCount = requests.filter(
+          (r) => r.status === "Pending",
+        ).length;
+        const approvedCount = requests.filter(
+          (r) => r.status === "Approved",
+        ).length;
 
         statsGrid.innerHTML = `
           <div class="col-md-6 col-lg-4">
@@ -449,7 +512,7 @@
 
       const container = document.getElementById("profileContainer");
       if (!container) return;
-      
+
       container.innerHTML = `
         <div class="profile-card p-4 bg-white border">
           <h4 class="fw-bold mb-3">
@@ -463,16 +526,21 @@
         </div>
       `;
 
-      document.getElementById("openEditProfileBtn").addEventListener("click", () => {
-        document.getElementById("editFirstName").value = user.firstName;
-        document.getElementById("editLastName").value = user.lastName;
-        document.getElementById("editProfileForm").classList.remove("was-validated");
-        UI.showModal("editProfileModal");
-      });
+      document
+        .getElementById("openEditProfileBtn")
+        .addEventListener("click", () => {
+          document.getElementById("editFirstName").value = user.firstName;
+          document.getElementById("editLastName").value = user.lastName;
+          document
+            .getElementById("editProfileForm")
+            .classList.remove("was-validated");
+          UI.showModal("editProfileModal");
+        });
     },
 
     renderVerifyEmail() {
-      const email = localStorage.getItem("unverified_email") || "your-email@example.com";
+      const email =
+        localStorage.getItem("unverified_email") || "your-email@example.com";
       const el = document.getElementById("verifyEmailPlaceholder");
       if (el) el.textContent = email;
     },
@@ -524,10 +592,12 @@
 
       let rows = "";
       emps.forEach((emp) => {
-        let fullName = `${emp.firstName || ''} ${emp.lastName || ''}`.trim();
+        let fullName = `${emp.firstName || ""} ${emp.lastName || ""}`.trim();
         if (!fullName) {
           const user = Store.findAccountByEmail(emp.email);
-          fullName = user ? `${user.firstName} ${user.lastName}` : "Unlinked Account";
+          fullName = user
+            ? `${user.firstName} ${user.lastName}`
+            : "Unlinked Account";
         }
         rows += `
           <tr>
@@ -676,10 +746,10 @@
 
       let rows = "";
       accounts.forEach((acc, index) => {
-        const verifiedCheckbox = acc.verified 
-          ? `<input type="checkbox" class="form-check-input" checked disabled style="cursor: default;" />` 
+        const verifiedCheckbox = acc.verified
+          ? `<input type="checkbox" class="form-check-input" checked disabled style="cursor: default;" />`
           : `<input type="checkbox" class="form-check-input" disabled style="cursor: default;" />`;
-        
+
         const roleText = acc.role === "admin" ? "Admin" : "User";
 
         rows += `
@@ -722,7 +792,7 @@
     renderRequests() {
       const container = document.getElementById("requestsContainer");
       if (!container) return;
-      
+
       const titleEl = document.getElementById("requestsTitle");
       const toggleBtn = document.getElementById("toggleAddRequestFormBtn");
 
@@ -736,7 +806,9 @@
       } else {
         if (titleEl) titleEl.textContent = "My Requests";
         if (toggleBtn) toggleBtn.classList.remove("d-none");
-        requests = Store.getRequests().filter(r => r.employeeEmail === AuthService.currentUser.email);
+        requests = Store.getRequests().filter(
+          (r) => r.employeeEmail === AuthService.currentUser.email,
+        );
       }
 
       if (requests.length === 0) {
@@ -753,13 +825,15 @@
       let rows = "";
       requests.forEach((req) => {
         let itemsStr = "";
-        req.items.forEach(item => {
+        req.items.forEach((item) => {
           itemsStr += `• ${escapeHtml(item.name)} (x${item.qty})<br/>`;
         });
 
         let badge = `<span class="badge badge-status badge-pending">Pending</span>`;
-        if (req.status === "Approved") badge = `<span class="badge badge-status badge-approved">Approved</span>`;
-        if (req.status === "Rejected") badge = `<span class="badge badge-status badge-rejected">Rejected</span>`;
+        if (req.status === "Approved")
+          badge = `<span class="badge badge-status badge-approved">Approved</span>`;
+        if (req.status === "Rejected")
+          badge = `<span class="badge badge-status badge-rejected">Rejected</span>`;
 
         let actions = "";
         if (isAdmin) {
@@ -818,7 +892,7 @@
           </table>
         </div>
       `;
-    }
+    },
   };
 
   // Helpers
@@ -827,8 +901,9 @@
     if (!container) return;
 
     const rowDiv = document.createElement("div");
-    rowDiv.className = "row g-2 item-row align-items-center animate-row-entry mt-2";
-    
+    rowDiv.className =
+      "row g-2 item-row align-items-center animate-row-entry mt-2";
+
     let actionButtonHtml = "";
     if (isFirst) {
       actionButtonHtml = `
@@ -889,12 +964,12 @@
       form.reset();
       form.classList.remove("was-validated");
     }
-    
+
     const reqType = document.getElementById("reqType");
     if (reqType) {
       reqType.value = "Equipment";
     }
-    
+
     const validationMsg = document.getElementById("reqItemsValidationMsg");
     if (validationMsg) {
       validationMsg.classList.add("d-none");
@@ -909,7 +984,7 @@
       Store.init();
       AuthService.checkSession();
       Router.init();
-      
+
       Store.subscribe(() => {
         Router.renderCurrentRoute();
       });
@@ -936,34 +1011,58 @@
       }
 
       // Inline Form Toggles
-      this.bindFormToggle("toggleAddEmployeeFormBtn", "cancelEmployeeFormBtn", "employeeFormCard", () => {
-        const form = document.getElementById("addEmployeeForm");
-        form.reset();
-        form.classList.remove("was-validated");
-        document.getElementById("editEmpIdOriginal").value = "";
-        document.getElementById("empEmailSelect").disabled = false;
-        document.getElementById("employeeFormTitle").textContent = "Add Employee";
-      });
+      this.bindFormToggle(
+        "toggleAddEmployeeFormBtn",
+        "cancelEmployeeFormBtn",
+        "employeeFormCard",
+        () => {
+          const form = document.getElementById("addEmployeeForm");
+          form.reset();
+          form.classList.remove("was-validated");
+          document.getElementById("editEmpIdOriginal").value = "";
+          document.getElementById("empEmailSelect").disabled = false;
+          document.getElementById("employeeFormTitle").textContent =
+            "Add Employee";
+        },
+      );
 
-      this.bindFormToggle("toggleAddDeptFormBtn", "cancelDeptFormBtn", "deptFormCard", () => {
-        const form = document.getElementById("addDepartmentForm");
-        form.reset();
-        form.classList.remove("was-validated");
-        document.getElementById("editDeptIdOriginal").value = "";
-        document.getElementById("deptFormTitle").textContent = "Add Department";
-      });
+      this.bindFormToggle(
+        "toggleAddDeptFormBtn",
+        "cancelDeptFormBtn",
+        "deptFormCard",
+        () => {
+          const form = document.getElementById("addDepartmentForm");
+          form.reset();
+          form.classList.remove("was-validated");
+          document.getElementById("editDeptIdOriginal").value = "";
+          document.getElementById("deptFormTitle").textContent =
+            "Add Department";
+        },
+      );
 
-      this.bindFormToggle("toggleAddAccountFormBtn", "cancelAccountFormBtn", "accountFormCard", () => {
-        const form = document.getElementById("addAccountForm");
-        form.reset();
-        form.classList.remove("was-validated");
-        document.getElementById("editAccIndex").value = "";
-        document.getElementById("addAccEmailGroup").classList.remove("d-none");
-        document.getElementById("addAccPasswordGroup").classList.remove("d-none");
-        document.getElementById("accountFormTitle").textContent = "Add Account";
-      });
+      this.bindFormToggle(
+        "toggleAddAccountFormBtn",
+        "cancelAccountFormBtn",
+        "accountFormCard",
+        () => {
+          const form = document.getElementById("addAccountForm");
+          form.reset();
+          form.classList.remove("was-validated");
+          document.getElementById("editAccIndex").value = "";
+          document
+            .getElementById("addAccEmailGroup")
+            .classList.remove("d-none");
+          document
+            .getElementById("addAccPasswordGroup")
+            .classList.remove("d-none");
+          document.getElementById("accountFormTitle").textContent =
+            "Add Account";
+        },
+      );
 
-      const toggleAddRequestBtn = document.getElementById("toggleAddRequestFormBtn");
+      const toggleAddRequestBtn = document.getElementById(
+        "toggleAddRequestFormBtn",
+      );
       if (toggleAddRequestBtn) {
         toggleAddRequestBtn.addEventListener("click", () => {
           resetNewRequestForm();
@@ -1018,7 +1117,10 @@
             Store.save();
             localStorage.removeItem("unverified_email");
             localStorage.setItem("verified_success_flash", "true");
-            UI.toast("Verification simulated. Account is now active.", "success");
+            UI.toast(
+              "Verification simulated. Account is now active.",
+              "success",
+            );
             Router.navigateTo("#/login");
           }
         });
@@ -1035,7 +1137,9 @@
       });
 
       // Request checklist events
-      const requestItemsContainer = document.getElementById("requestItemsContainer");
+      const requestItemsContainer = document.getElementById(
+        "requestItemsContainer",
+      );
       if (requestItemsContainer) {
         requestItemsContainer.addEventListener("click", (e) => {
           if (e.target.closest(".add-item-row-btn")) {
@@ -1045,7 +1149,10 @@
             if (rows.length > 1) {
               e.target.closest(".item-row").remove();
             } else {
-              UI.toast("Your request checklist must contain at least 1 item entry.", "warning");
+              UI.toast(
+                "Your request checklist must contain at least 1 item entry.",
+                "warning",
+              );
             }
           }
         });
@@ -1064,9 +1171,12 @@
             const empId = editBtn.getAttribute("data-id");
             const emp = Store.findEmployeeById(empId);
             if (emp) {
-              document.getElementById("addEmployeeForm").classList.remove("was-validated");
+              document
+                .getElementById("addEmployeeForm")
+                .classList.remove("was-validated");
               document.getElementById("editEmpIdOriginal").value = emp.empId;
-              document.getElementById("empFirstName").value = emp.firstName || "";
+              document.getElementById("empFirstName").value =
+                emp.firstName || "";
               document.getElementById("empLastName").value = emp.lastName || "";
               document.getElementById("empEmailSelect").value = emp.email;
               document.getElementById("empEmailSelect").disabled = true;
@@ -1074,7 +1184,8 @@
               document.getElementById("empDeptSelect").value = emp.department;
               document.getElementById("empHireDate").value = emp.hireDate;
 
-              document.getElementById("employeeFormTitle").textContent = "Edit Employee Details";
+              document.getElementById("employeeFormTitle").textContent =
+                "Edit Employee Details";
               const card = document.getElementById("employeeFormCard");
               card.classList.remove("d-none");
               card.scrollIntoView({ behavior: "smooth" });
@@ -1083,7 +1194,9 @@
 
           if (deleteBtn) {
             const empId = deleteBtn.getAttribute("data-id");
-            if (confirm(`Are you sure you want to delete Employee: ${empId}?`)) {
+            if (
+              confirm(`Are you sure you want to delete Employee: ${empId}?`)
+            ) {
               Store.deleteEmployee(empId);
               UI.toast("Employee record deleted.", "success");
             }
@@ -1099,14 +1212,17 @@
 
           if (editBtn) {
             const id = parseInt(editBtn.getAttribute("data-id"));
-            const dept = Store.getDepartments().find(d => d.id === id);
+            const dept = Store.getDepartments().find((d) => d.id === id);
             if (dept) {
-              document.getElementById("addDepartmentForm").classList.remove("was-validated");
+              document
+                .getElementById("addDepartmentForm")
+                .classList.remove("was-validated");
               document.getElementById("editDeptIdOriginal").value = dept.id;
               document.getElementById("deptName").value = dept.name;
               document.getElementById("deptDesc").value = dept.description;
 
-              document.getElementById("deptFormTitle").textContent = "Edit Department Details";
+              document.getElementById("deptFormTitle").textContent =
+                "Edit Department Details";
               const card = document.getElementById("deptFormCard");
               card.classList.remove("d-none");
               card.scrollIntoView({ behavior: "smooth" });
@@ -1115,7 +1231,9 @@
 
           if (deleteBtn) {
             const id = parseInt(deleteBtn.getAttribute("data-id"));
-            if (confirm("Delete department and un-assign associated properties?")) {
+            if (
+              confirm("Delete department and un-assign associated properties?")
+            ) {
               Store.deleteDepartment(id);
               UI.toast("Department record deleted.", "success");
             }
@@ -1134,17 +1252,24 @@
             const idx = parseInt(editBtn.getAttribute("data-index"));
             const acc = Store.getAccounts()[idx];
             if (acc) {
-              document.getElementById("addAccountForm").classList.remove("was-validated");
+              document
+                .getElementById("addAccountForm")
+                .classList.remove("was-validated");
               document.getElementById("editAccIndex").value = idx;
               document.getElementById("addAccFirstName").value = acc.firstName;
               document.getElementById("addAccLastName").value = acc.lastName;
               document.getElementById("addAccRole").value = acc.role;
               document.getElementById("addAccVerified").checked = acc.verified;
 
-              document.getElementById("addAccEmailGroup").classList.add("d-none");
-              document.getElementById("addAccPasswordGroup").classList.add("d-none");
+              document
+                .getElementById("addAccEmailGroup")
+                .classList.add("d-none");
+              document
+                .getElementById("addAccPasswordGroup")
+                .classList.add("d-none");
 
-              document.getElementById("accountFormTitle").textContent = "Edit Account Credentials";
+              document.getElementById("accountFormTitle").textContent =
+                "Edit Account Credentials";
               const card = document.getElementById("accountFormCard");
               card.classList.remove("d-none");
               card.scrollIntoView({ behavior: "smooth" });
@@ -1153,7 +1278,9 @@
 
           if (resetBtn) {
             const email = resetBtn.getAttribute("data-email");
-            document.getElementById("resetPasswordForm").classList.remove("was-validated");
+            document
+              .getElementById("resetPasswordForm")
+              .classList.remove("was-validated");
             document.getElementById("resetPasswordEmail").value = email;
             document.getElementById("newPasswordInput").value = "";
             UI.showModal("resetPasswordModal");
@@ -1162,10 +1289,17 @@
           if (deleteBtn) {
             const email = deleteBtn.getAttribute("data-email");
             if (email === AuthService.currentUser.email) {
-              UI.toast("You cannot delete your own logged-in account.", "danger");
+              UI.toast(
+                "You cannot delete your own logged-in account.",
+                "danger",
+              );
               return;
             }
-            if (confirm(`Permanently remove user account: ${email}? (This will also wipe their linked employee profile)`)) {
+            if (
+              confirm(
+                `Permanently remove user account: ${email}? (This will also wipe their linked employee profile)`,
+              )
+            ) {
               Store.deleteAccount(email);
               UI.toast("Account deleted successfully.", "success");
             }
@@ -1182,7 +1316,7 @@
 
           if (approveBtn) {
             const id = parseInt(approveBtn.getAttribute("data-id"));
-            const req = Store.getRequests().find(r => r.id === id);
+            const req = Store.getRequests().find((r) => r.id === id);
             if (req) {
               req.status = "Approved";
               Store.save();
@@ -1192,7 +1326,7 @@
 
           if (rejectBtn) {
             const id = parseInt(rejectBtn.getAttribute("data-id"));
-            const req = Store.getRequests().find(r => r.id === id);
+            const req = Store.getRequests().find((r) => r.id === id);
             if (req) {
               req.status = "Rejected";
               Store.save();
@@ -1203,7 +1337,9 @@
           if (cancelBtn) {
             const id = parseInt(cancelBtn.getAttribute("data-id"));
             if (confirm("Cancel and delete this request entry?")) {
-              Store.state.requests = Store.state.requests.filter(r => r.id !== id);
+              Store.state.requests = Store.state.requests.filter(
+                (r) => r.id !== id,
+              );
               Store.save();
               UI.toast("Request cancelled.", "info");
             }
@@ -1253,7 +1389,10 @@
     handleRegister(e) {
       const firstName = document.getElementById("regFirstName").value.trim();
       const lastName = document.getElementById("regLastName").value.trim();
-      const email = document.getElementById("regEmail").value.trim().toLowerCase();
+      const email = document
+        .getElementById("regEmail")
+        .value.trim()
+        .toLowerCase();
       const password = document.getElementById("regPassword").value;
 
       if (Store.findAccountByEmail(email)) {
@@ -1261,14 +1400,27 @@
         return;
       }
 
-      Store.addAccount({ firstName, lastName, email, password, role: "user", verified: false });
+      Store.addAccount({
+        firstName,
+        lastName,
+        email,
+        password,
+        role: "user",
+        verified: false,
+      });
       localStorage.setItem("unverified_email", email);
-      UI.toast("Registration complete. Please simulate email verification.", "success");
+      UI.toast(
+        "Registration complete. Please simulate email verification.",
+        "success",
+      );
       Router.navigateTo("#/verify-email");
     },
 
     handleLogin(e) {
-      const email = document.getElementById("loginEmail").value.trim().toLowerCase();
+      const email = document
+        .getElementById("loginEmail")
+        .value.trim()
+        .toLowerCase();
       const password = document.getElementById("loginPassword").value;
 
       const res = AuthService.login(email, password);
@@ -1313,7 +1465,10 @@
         acc.password = pwd;
         Store.save();
         UI.hideModal("resetPasswordModal");
-        UI.toast(`Password successfully reset for account: ${email}`, "success");
+        UI.toast(
+          `Password successfully reset for account: ${email}`,
+          "success",
+        );
       }
     },
 
@@ -1325,7 +1480,10 @@
       const verified = document.getElementById("addAccVerified").checked;
 
       if (indexStr === "") {
-        const email = document.getElementById("addAccEmail").value.trim().toLowerCase();
+        const email = document
+          .getElementById("addAccEmail")
+          .value.trim()
+          .toLowerCase();
         const password = document.getElementById("addAccPassword").value;
 
         if (Store.findAccountByEmail(email)) {
@@ -1333,7 +1491,14 @@
           return;
         }
 
-        Store.addAccount({ firstName, lastName, email, password, role, verified });
+        Store.addAccount({
+          firstName,
+          lastName,
+          email,
+          password,
+          role,
+          verified,
+        });
         UI.toast("Account created successfully.", "success");
       } else {
         const idx = parseInt(indexStr);
@@ -1342,11 +1507,17 @@
           // Prevent self-lockout
           if (acc.email === AuthService.currentUser.email) {
             if (role !== "admin" && AuthService.currentUser.role === "admin") {
-              UI.toast("Error: You cannot strip yourself of Administrative privileges.", "danger");
+              UI.toast(
+                "Error: You cannot strip yourself of Administrative privileges.",
+                "danger",
+              );
               return;
             }
             if (!verified) {
-              UI.toast("Error: You cannot set yourself to unverified.", "danger");
+              UI.toast(
+                "Error: You cannot set yourself to unverified.",
+                "danger",
+              );
               return;
             }
           }
@@ -1377,7 +1548,7 @@
         UI.toast("Department registered successfully.", "success");
       } else {
         const id = parseInt(editIdStr);
-        const dept = Store.getDepartments().find(d => d.id === id);
+        const dept = Store.getDepartments().find((d) => d.id === id);
         if (dept) {
           dept.name = name;
           dept.description = desc;
@@ -1407,16 +1578,30 @@
 
         const acc = Store.findAccountByEmail(email);
         if (!acc) {
-          UI.toast("Error: The email address must belong to a registered account.", "danger");
+          UI.toast(
+            "Error: The email address must belong to a registered account.",
+            "danger",
+          );
           return;
         }
 
-        if (Store.getEmployees().some(e => e.email === email)) {
-          UI.toast("This user account is already linked to another employee.", "danger");
+        if (Store.getEmployees().some((e) => e.email === email)) {
+          UI.toast(
+            "This user account is already linked to another employee.",
+            "danger",
+          );
           return;
         }
 
-        Store.addEmployee({ empId, email, firstName, lastName, position, department, hireDate });
+        Store.addEmployee({
+          empId,
+          email,
+          firstName,
+          lastName,
+          position,
+          department,
+          hireDate,
+        });
         UI.toast("Employee record registered successfully.", "success");
       } else {
         const emp = Store.findEmployeeById(editIdOrig);
@@ -1460,7 +1645,10 @@
       const validationMsg = document.getElementById("reqItemsValidationMsg");
       if (items.length === 0 || !valid) {
         validationMsg.classList.remove("d-none");
-        UI.toast("Validation failed: checklist item invalid or empty.", "danger");
+        UI.toast(
+          "Validation failed: checklist item invalid or empty.",
+          "danger",
+        );
         return;
       }
       validationMsg.classList.add("d-none");
@@ -1470,14 +1658,14 @@
         type,
         items,
         status: "Pending",
-        date: new Date().toISOString().split('T')[0],
-        employeeEmail: AuthService.currentUser.email
+        date: new Date().toISOString().split("T")[0],
+        employeeEmail: AuthService.currentUser.email,
       });
 
       UI.hideModal("newRequestModal");
       resetNewRequestForm();
       UI.toast("Hardware request submitted successfully.", "success");
-    }
+    },
   };
 
   // Bootstrap application
