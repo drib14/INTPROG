@@ -1,3 +1,4 @@
+const API_URL = "http://localhost:5000/api";
 (function () {
   "use strict";
 
@@ -13,6 +14,7 @@
   }
 
   // Data Store
+
   const Store = {
     key: "ipt_demo_v1",
     state: {
@@ -20,24 +22,12 @@
       departments: [],
       employees: [],
       requests: [],
+      stats: null,
     },
     listeners: [],
 
     init() {
-      try {
-        const stored = localStorage.getItem(this.key);
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (parsed && Array.isArray(parsed.accounts)) {
-            this.state = parsed;
-            window.db = this.state;
-            return;
-          }
-        }
-      } catch (err) {
-        console.warn("Storage hydration failed, seeding default records.", err);
-      }
-      this.seed();
+      // Handled asynchronously via fetchData
     },
 
     subscribe(listener) {
@@ -48,134 +38,201 @@
       this.listeners.forEach((fn) => fn(this.state));
     },
 
-    save() {
-      localStorage.setItem(this.key, JSON.stringify(this.state));
-      window.db = this.state;
-      this.notify();
+    async fetchData() {
+      const token = localStorage.getItem("auth_token");
+      if (!token) return;
+
+      const headers = { Authorization: `Bearer ${token}` };
+      try {
+        const reqRes = await fetch(`${API_URL}/requests`, { headers });
+        if (reqRes.ok) this.state.requests = await reqRes.json();
+
+        const statsRes = await fetch(`${API_URL}/stats`, { headers });
+        if (statsRes.ok) this.state.stats = await statsRes.json();
+
+        if (AuthService.currentUser && AuthService.currentUser.role === "admin") {
+          const accRes = await fetch(`${API_URL}/accounts`, { headers });
+          if (accRes.ok) this.state.accounts = await accRes.json();
+
+          const deptRes = await fetch(`${API_URL}/departments`, { headers });
+          if (deptRes.ok) this.state.departments = await deptRes.json();
+
+          const empRes = await fetch(`${API_URL}/employees`, { headers });
+          if (empRes.ok) this.state.employees = await empRes.json();
+        }
+
+        this.notify();
+      } catch (err) {
+        console.error("Fetch data error", err);
+      }
     },
 
-    seed() {
-      this.state = {
-        accounts: [
-          {
-            firstName: "System",
-            lastName: "Admin",
-            email: "admin@example.com",
-            password: "Password123!",
-            role: "admin",
-            verified: true,
-          },
-          {
-            firstName: "Jane",
-            lastName: "Doe",
-            email: "employee@example.com",
-            password: "Password123!",
-            role: "user",
-            verified: true,
-          },
-        ],
-        departments: [
-          {
-            id: 1,
-            name: "Engineering",
-            description: "Software development and deployment operations",
-          },
-          {
-            id: 2,
-            name: "HR",
-            description:
-              "Human Resource acquisition and employee benefits administration",
-          },
-          {
-            id: 3,
-            name: "Finance",
-            description: "Accounting, payroll, and asset management",
-          },
-        ],
-        employees: [],
-        requests: [],
-      };
-      this.save();
+    getAccounts() { return this.state.accounts; },
+    findAccountByEmail(email) { return this.state.accounts.find(a => a.email === email); },
+    async addAccount(account) {
+      const token = localStorage.getItem("auth_token");
+      const res = await fetch(`${API_URL}/accounts`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify(account)
+      });
+      if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.message || "Failed to add account");
+      }
+      await this.fetchData();
+    },
+    async updateAccount(email, account) {
+      const token = localStorage.getItem("auth_token");
+      const res = await fetch(`${API_URL}/accounts/${email}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify(account)
+      });
+      if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.message || "Failed to update account");
+      }
+      await this.fetchData();
+    },
+    async deleteAccount(email) {
+      const token = localStorage.getItem("auth_token");
+      await fetch(`${API_URL}/accounts/${email}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      await this.fetchData();
     },
 
-    // Accounts
-    getAccounts() {
-      return this.state.accounts;
+    getDepartments() { return this.state.departments; },
+    async addDepartment(name, description) {
+      const token = localStorage.getItem("auth_token");
+      const res = await fetch(`${API_URL}/departments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ name, description })
+      });
+      if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.message || "Failed to add department");
+      }
+      await this.fetchData();
     },
-    findAccountByEmail(email) {
-      return this.state.accounts.find((a) => a.email === email);
+    async updateDepartment(id, name, description) {
+      const token = localStorage.getItem("auth_token");
+      const res = await fetch(`${API_URL}/departments/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ name, description })
+      });
+      if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.message || "Failed to update department");
+      }
+      await this.fetchData();
     },
-    addAccount(account) {
-      this.state.accounts.push(account);
-      this.save();
-    },
-    deleteAccount(email) {
-      this.state.accounts = this.state.accounts.filter(
-        (a) => a.email !== email,
-      );
-      this.state.employees = this.state.employees.filter(
-        (e) => e.email !== email,
-      );
-      this.save();
-    },
-
-    // Departments
-    getDepartments() {
-      return this.state.departments;
-    },
-    addDepartment(name, description) {
-      const maxId = this.state.departments.reduce(
-        (max, d) => (d.id > max ? d.id : max),
-        0,
-      );
-      this.state.departments.push({ id: maxId + 1, name, description });
-      this.save();
-    },
-    deleteDepartment(id) {
-      this.state.departments = this.state.departments.filter(
-        (d) => d.id !== id,
-      );
-      this.save();
+    async deleteDepartment(id) {
+      const token = localStorage.getItem("auth_token");
+      await fetch(`${API_URL}/departments/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      await this.fetchData();
     },
 
-    // Employees
-    getEmployees() {
-      return this.state.employees;
+    getEmployees() { return this.state.employees; },
+    findEmployeeById(empId) { return this.state.employees.find(e => e.empId === empId); },
+    async addEmployee(employee) {
+      const token = localStorage.getItem("auth_token");
+      const res = await fetch(`${API_URL}/employees`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify(employee)
+      });
+      if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.message || "Failed to add employee");
+      }
+      await this.fetchData();
     },
-    findEmployeeById(empId) {
-      return this.state.employees.find((e) => e.empId === empId);
+    async updateEmployee(empId, employee) {
+      const token = localStorage.getItem("auth_token");
+      const res = await fetch(`${API_URL}/employees/${empId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify(employee)
+      });
+      if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.message || "Failed to update employee");
+      }
+      await this.fetchData();
     },
-    addEmployee(employee) {
-      this.state.employees.push(employee);
-      this.save();
-    },
-    deleteEmployee(empId) {
-      this.state.employees = this.state.employees.filter(
-        (e) => e.empId !== empId,
-      );
-      this.save();
+    async deleteEmployee(empId) {
+      const token = localStorage.getItem("auth_token");
+      await fetch(`${API_URL}/employees/${empId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      await this.fetchData();
     },
 
-    // Requests
-    getRequests() {
-      return this.state.requests;
+    getRequests() { return this.state.requests; },
+    async addRequest(request) {
+      const token = localStorage.getItem("auth_token");
+      const res = await fetch(`${API_URL}/requests`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify(request)
+      });
+      if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.message || "Failed to add request");
+      }
+      await this.fetchData();
     },
-    addRequest(request) {
-      this.state.requests.push(request);
-      this.save();
+    async updateRequestStatus(id, status) {
+      const token = localStorage.getItem("auth_token");
+      await fetch(`${API_URL}/requests/${id}/status`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ status })
+      });
+      await this.fetchData();
     },
+    async deleteRequest(id) {
+      const token = localStorage.getItem("auth_token");
+      await fetch(`${API_URL}/requests/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      await this.fetchData();
+    }
   };
 
+
   // Authentication Service
+
   const AuthService = {
     currentUser: null,
 
-    checkSession() {
+    async checkSession() {
       const token = localStorage.getItem("auth_token");
       if (token) {
-        const acc = Store.findAccountByEmail(token);
-        if (acc) {
-          this.setSession(acc);
+        try {
+          const res = await fetch(`${API_URL}/me`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          if (res.ok) {
+            const user = await res.json();
+            this.setSession(user);
+            await Store.fetchData();
+          } else {
+            this.logout();
+          }
+        } catch (e) {
+          console.error(e);
+          this.logout();
         }
       }
     },
@@ -207,23 +264,30 @@
       }
     },
 
-    login(email, password) {
-      const acc = Store.findAccountByEmail(email);
-      if (!acc || acc.password !== password) {
-        return { success: false, message: "Incorrect email or password." };
-      }
-      if (!acc.verified) {
-        localStorage.setItem("unverified_email", email);
-        return {
-          success: false,
-          unverified: true,
-          message: "Email address is not verified.",
-        };
-      }
+    async login(email, password) {
+      try {
+        const res = await fetch(`${API_URL}/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
 
-      localStorage.setItem("auth_token", email);
-      this.setSession(acc);
-      return { success: true };
+        if (res.ok) {
+          localStorage.setItem("auth_token", data.token);
+          this.setSession(data.user);
+          await Store.fetchData();
+          return { success: true };
+        } else {
+          if (res.status === 403 && data.unverified) {
+             localStorage.setItem("unverified_email", email);
+             return { success: false, unverified: true, message: data.message };
+          }
+          return { success: false, message: data.message || "Login failed" };
+        }
+      } catch (err) {
+         return { success: false, message: "Network error" };
+      }
     },
 
     logout() {
@@ -231,6 +295,7 @@
       this.setSession(null);
     },
   };
+
 
   // Router
   const Router = {
@@ -416,13 +481,13 @@
       if (!statsGrid) return;
       statsGrid.innerHTML = "";
 
+      const stats = Store.state.stats || {};
+
       if (user.role === "admin") {
-        const accountsCount = Store.getAccounts().length;
-        const deptsCount = Store.getDepartments().length;
-        const empsCount = Store.getEmployees().length;
-        const pendingReqsCount = Store.getRequests().filter(
-          (r) => r.status === "Pending",
-        ).length;
+        const accountsCount = stats.accountsCount || 0;
+        const deptsCount = stats.deptsCount || 0;
+        const empsCount = stats.empsCount || 0;
+        const pendingReqsCount = stats.pendingReqsCount || 0;
 
         statsGrid.innerHTML = `
           <div class="col-md-6 col-lg-3">
@@ -463,16 +528,9 @@
           </div>
         `;
       } else {
-        const requests = Store.getRequests().filter(
-          (r) => r.employeeEmail === user.email,
-        );
-        const totalRequests = requests.length;
-        const pendingCount = requests.filter(
-          (r) => r.status === "Pending",
-        ).length;
-        const approvedCount = requests.filter(
-          (r) => r.status === "Approved",
-        ).length;
+        const totalRequests = stats.totalRequests || 0;
+        const pendingCount = stats.pendingCount || 0;
+        const approvedCount = stats.approvedCount || 0;
 
         statsGrid.innerHTML = `
           <div class="col-md-6 col-lg-4">
@@ -980,9 +1038,8 @@
 
   // Application Controller
   const App = {
-    init() {
-      Store.init();
-      AuthService.checkSession();
+    async init() {
+      await AuthService.checkSession();
       Router.init();
 
       Store.subscribe(() => {
@@ -1105,23 +1162,28 @@
       // Simulate email verification
       const verifyBtn = document.getElementById("verifyEmailBtn");
       if (verifyBtn) {
-        verifyBtn.addEventListener("click", () => {
+        verifyBtn.addEventListener("click", async () => {
           const email = localStorage.getItem("unverified_email");
           if (!email) {
             UI.toast("No pending verification detected.", "danger");
             return;
           }
-          const acc = Store.findAccountByEmail(email);
-          if (acc) {
-            acc.verified = true;
-            Store.save();
-            localStorage.removeItem("unverified_email");
-            localStorage.setItem("verified_success_flash", "true");
-            UI.toast(
-              "Verification simulated. Account is now active.",
-              "success",
-            );
-            Router.navigateTo("#/login");
+          try {
+            const res = await fetch(`${API_URL}/verify`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ email })
+            });
+            if (res.ok) {
+              localStorage.removeItem("unverified_email");
+              localStorage.setItem("verified_success_flash", "true");
+              UI.toast("Verification simulated. Account is now active.", "success");
+              Router.navigateTo("#/login");
+            } else {
+              UI.toast("Verification failed.", "danger");
+            }
+          } catch (err) {
+             UI.toast("Network error.", "danger");
           }
         });
       }
@@ -1197,8 +1259,9 @@
             if (
               confirm(`Are you sure you want to delete Employee: ${empId}?`)
             ) {
-              Store.deleteEmployee(empId);
-              UI.toast("Employee record deleted.", "success");
+              Store.deleteEmployee(empId).then(() => {
+                UI.toast("Employee record deleted.", "success");
+              });
             }
           }
         });
@@ -1234,8 +1297,9 @@
             if (
               confirm("Delete department and un-assign associated properties?")
             ) {
-              Store.deleteDepartment(id);
-              UI.toast("Department record deleted.", "success");
+              Store.deleteDepartment(id).then(() => {
+                UI.toast("Department record deleted.", "success");
+              });
             }
           }
         });
@@ -1300,8 +1364,9 @@
                 `Permanently remove user account: ${email}? (This will also wipe their linked employee profile)`,
               )
             ) {
-              Store.deleteAccount(email);
-              UI.toast("Account deleted successfully.", "success");
+              Store.deleteAccount(email).then(() => {
+                UI.toast("Account deleted successfully.", "success");
+              });
             }
           }
         });
@@ -1318,9 +1383,9 @@
             const id = parseInt(approveBtn.getAttribute("data-id"));
             const req = Store.getRequests().find((r) => r.id === id);
             if (req) {
-              req.status = "Approved";
-              Store.save();
-              UI.toast("Request Approved.", "success");
+              Store.updateRequestStatus(id, "Approved").then(() => {
+                UI.toast("Request Approved.", "success");
+              });
             }
           }
 
@@ -1328,20 +1393,18 @@
             const id = parseInt(rejectBtn.getAttribute("data-id"));
             const req = Store.getRequests().find((r) => r.id === id);
             if (req) {
-              req.status = "Rejected";
-              Store.save();
-              UI.toast("Request Rejected.", "danger");
+              Store.updateRequestStatus(id, "Rejected").then(() => {
+                UI.toast("Request Rejected.", "danger");
+              });
             }
           }
 
           if (cancelBtn) {
             const id = parseInt(cancelBtn.getAttribute("data-id"));
             if (confirm("Cancel and delete this request entry?")) {
-              Store.state.requests = Store.state.requests.filter(
-                (r) => r.id !== id,
-              );
-              Store.save();
-              UI.toast("Request cancelled.", "info");
+              Store.deleteRequest(id).then(() => {
+                UI.toast("Request cancelled.", "info");
+              });
             }
           }
         });
@@ -1386,7 +1449,8 @@
       });
     },
 
-    handleRegister(e) {
+
+    async handleRegister(e) {
       const firstName = document.getElementById("regFirstName").value.trim();
       const lastName = document.getElementById("regLastName").value.trim();
       const email = document
@@ -1395,35 +1459,34 @@
         .toLowerCase();
       const password = document.getElementById("regPassword").value;
 
-      if (Store.findAccountByEmail(email)) {
-        UI.toast("This email address is already registered.", "danger");
-        return;
-      }
+      try {
+        const res = await fetch(`${API_URL}/register`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ firstName, lastName, email, password })
+        });
+        const data = await res.json();
 
-      Store.addAccount({
-        firstName,
-        lastName,
-        email,
-        password,
-        role: "user",
-        verified: false,
-      });
-      localStorage.setItem("unverified_email", email);
-      UI.toast(
-        "Registration complete. Please simulate email verification.",
-        "success",
-      );
-      Router.navigateTo("#/verify-email");
+        if (res.ok) {
+          localStorage.setItem("unverified_email", email);
+          UI.toast("Registration complete. Please simulate email verification.", "success");
+          Router.navigateTo("#/verify-email");
+        } else {
+          UI.toast(data.message || "Registration failed", "danger");
+        }
+      } catch (err) {
+        UI.toast("Network error", "danger");
+      }
     },
 
-    handleLogin(e) {
+    async handleLogin(e) {
       const email = document
         .getElementById("loginEmail")
         .value.trim()
         .toLowerCase();
       const password = document.getElementById("loginPassword").value;
 
-      const res = AuthService.login(email, password);
+      const res = await AuthService.login(email, password);
       if (res.success) {
         Router.navigateTo("#/profile");
         UI.toast("Logged in successfully.", "success");
@@ -1435,44 +1498,56 @@
       }
     },
 
-    handleEditProfile(e) {
+    async handleEditProfile(e) {
       const fName = document.getElementById("editFirstName").value.trim();
       const lName = document.getElementById("editLastName").value.trim();
 
-      const user = AuthService.currentUser;
-      user.firstName = fName;
-      user.lastName = lName;
-
-      const acc = Store.findAccountByEmail(user.email);
-      if (acc) {
-        acc.firstName = fName;
-        acc.lastName = lName;
+      const token = localStorage.getItem("auth_token");
+      try {
+        const res = await fetch(`${API_URL}/profile`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ firstName: fName, lastName: lName })
+        });
+        if (res.ok) {
+          const user = AuthService.currentUser;
+          user.firstName = fName;
+          user.lastName = lName;
+          AuthService.setSession(user);
+          await Store.fetchData();
+          UI.hideModal("editProfileModal");
+          UI.toast("Profile info updated.", "success");
+        } else {
+          UI.toast("Failed to update profile", "danger");
+        }
+      } catch (err) {
+        UI.toast("Network error", "danger");
       }
-
-      Store.save();
-      AuthService.setSession(user);
-
-      UI.hideModal("editProfileModal");
-      UI.toast("Profile info updated.", "success");
     },
 
-    handleResetPassword(e) {
+    async handleResetPassword(e) {
       const email = document.getElementById("resetPasswordEmail").value;
       const pwd = document.getElementById("newPasswordInput").value;
 
-      const acc = Store.findAccountByEmail(email);
-      if (acc) {
-        acc.password = pwd;
-        Store.save();
-        UI.hideModal("resetPasswordModal");
-        UI.toast(
-          `Password successfully reset for account: ${email}`,
-          "success",
-        );
+      try {
+        const res = await fetch(`${API_URL}/reset-password`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password: pwd })
+        });
+        if (res.ok) {
+          UI.hideModal("resetPasswordModal");
+          UI.toast(`Password successfully reset for account: ${email}`, "success");
+        } else {
+          const data = await res.json();
+          UI.toast(data.message || "Reset failed", "danger");
+        }
+      } catch (err) {
+        UI.toast("Network error", "danger");
       }
     },
 
-    handleSaveAccount(e) {
+    async handleSaveAccount(e) {
       const indexStr = document.getElementById("editAccIndex").value;
       const firstName = document.getElementById("addAccFirstName").value.trim();
       const lastName = document.getElementById("addAccLastName").value.trim();
@@ -1486,81 +1561,65 @@
           .toLowerCase();
         const password = document.getElementById("addAccPassword").value;
 
-        if (Store.findAccountByEmail(email)) {
-          UI.toast("Account email is already registered.", "danger");
-          return;
+        try {
+          await Store.addAccount({ firstName, lastName, email, password, role, verified });
+          UI.toast("Account created successfully.", "success");
+        } catch (err) {
+          UI.toast(err.message || "Error creating account.", "danger");
         }
-
-        Store.addAccount({
-          firstName,
-          lastName,
-          email,
-          password,
-          role,
-          verified,
-        });
-        UI.toast("Account created successfully.", "success");
       } else {
         const idx = parseInt(indexStr);
         const acc = Store.getAccounts()[idx];
         if (acc) {
-          // Prevent self-lockout
           if (acc.email === AuthService.currentUser.email) {
             if (role !== "admin" && AuthService.currentUser.role === "admin") {
-              UI.toast(
-                "Error: You cannot strip yourself of Administrative privileges.",
-                "danger",
-              );
+              UI.toast("Error: You cannot strip yourself of Administrative privileges.", "danger");
               return;
             }
             if (!verified) {
-              UI.toast(
-                "Error: You cannot set yourself to unverified.",
-                "danger",
-              );
+              UI.toast("Error: You cannot set yourself to unverified.", "danger");
               return;
             }
           }
 
-          acc.firstName = firstName;
-          acc.lastName = lastName;
-          acc.role = role;
-          acc.verified = verified;
-
-          if (acc.email === AuthService.currentUser.email) {
-            AuthService.setSession(acc);
+          try {
+            await Store.updateAccount(acc.email, { firstName, lastName, role, verified });
+            UI.toast("Account updated successfully.", "success");
+            if (acc.email === AuthService.currentUser.email) {
+               AuthService.currentUser.firstName = firstName;
+               AuthService.currentUser.lastName = lastName;
+               AuthService.setSession(AuthService.currentUser);
+            }
+          } catch (err) {
+            UI.toast(err.message || "Error updating account.", "danger");
           }
-          Store.save();
-          UI.toast("Account updated successfully.", "success");
         }
       }
 
       document.getElementById("accountFormCard").classList.add("d-none");
     },
 
-    handleSaveDepartment(e) {
+    async handleSaveDepartment(e) {
       const editIdStr = document.getElementById("editDeptIdOriginal").value;
       const name = document.getElementById("deptName").value.trim();
       const desc = document.getElementById("deptDesc").value.trim();
 
-      if (editIdStr === "") {
-        Store.addDepartment(name, desc);
-        UI.toast("Department registered successfully.", "success");
-      } else {
-        const id = parseInt(editIdStr);
-        const dept = Store.getDepartments().find((d) => d.id === id);
-        if (dept) {
-          dept.name = name;
-          dept.description = desc;
-          Store.save();
+      try {
+        if (editIdStr === "") {
+          await Store.addDepartment(name, desc);
+          UI.toast("Department registered successfully.", "success");
+        } else {
+          const id = parseInt(editIdStr);
+          await Store.updateDepartment(id, name, desc);
           UI.toast("Department updated successfully.", "success");
         }
+        document.getElementById("deptFormCard").classList.add("d-none");
+      } catch (err) {
+        UI.toast(err.message || "Error saving department.", "danger");
       }
-
-      document.getElementById("deptFormCard").classList.add("d-none");
     },
 
-    handleSaveEmployee(e) {
+    async handleSaveEmployee(e) {
       const editIdOrig = document.getElementById("editEmpIdOriginal").value;
       const firstName = document.getElementById("empFirstName").value.trim();
       const lastName = document.getElementById("empLastName").value.trim();
@@ -1569,57 +1628,22 @@
       const department = document.getElementById("empDeptSelect").value;
       const hireDate = document.getElementById("empHireDate").value;
 
-      if (editIdOrig === "") {
-        // Generate unique random numeric employee ID
-        let empId;
-        do {
-          empId = String(Math.floor(100000 + Math.random() * 900000));
-        } while (Store.findEmployeeById(empId));
-
-        const acc = Store.findAccountByEmail(email);
-        if (!acc) {
-          UI.toast(
-            "Error: The email address must belong to a registered account.",
-            "danger",
-          );
-          return;
-        }
-
-        if (Store.getEmployees().some((e) => e.email === email)) {
-          UI.toast(
-            "This user account is already linked to another employee.",
-            "danger",
-          );
-          return;
-        }
-
-        Store.addEmployee({
-          empId,
-          email,
-          firstName,
-          lastName,
-          position,
-          department,
-          hireDate,
-        });
-        UI.toast("Employee record registered successfully.", "success");
-      } else {
-        const emp = Store.findEmployeeById(editIdOrig);
-        if (emp) {
-          emp.firstName = firstName;
-          emp.lastName = lastName;
-          emp.position = position;
-          emp.department = department;
-          emp.hireDate = hireDate;
-          Store.save();
+      try {
+        if (editIdOrig === "") {
+          let empId = String(Math.floor(100000 + Math.random() * 900000));
+          await Store.addEmployee({ empId, email, firstName, lastName, position, department, hireDate });
+          UI.toast("Employee record registered successfully.", "success");
+        } else {
+          await Store.updateEmployee(editIdOrig, { firstName, lastName, position, department, hireDate });
           UI.toast("Employee record updated successfully.", "success");
         }
+        document.getElementById("employeeFormCard").classList.add("d-none");
+      } catch (err) {
+        UI.toast(err.message || "Error saving employee.", "danger");
       }
-
-      document.getElementById("employeeFormCard").classList.add("d-none");
     },
 
-    handleSaveRequest(e) {
+    async handleSaveRequest(e) {
       const type = document.getElementById("reqType").value;
       const rows = document.querySelectorAll(".item-row");
       const items = [];
@@ -1653,18 +1677,14 @@
       }
       validationMsg.classList.add("d-none");
 
-      Store.addRequest({
-        id: Date.now(),
-        type,
-        items,
-        status: "Pending",
-        date: new Date().toISOString().split("T")[0],
-        employeeEmail: AuthService.currentUser.email,
-      });
-
-      UI.hideModal("newRequestModal");
-      resetNewRequestForm();
-      UI.toast("Hardware request submitted successfully.", "success");
+      try {
+        await Store.addRequest({ type, items, status: "Pending", date: new Date().toISOString().split("T")[0] });
+        UI.hideModal("newRequestModal");
+        resetNewRequestForm();
+        UI.toast("Hardware request submitted successfully.", "success");
+      } catch (err) {
+        UI.toast(err.message || "Error saving request.", "danger");
+      }
     },
   };
 
