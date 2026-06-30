@@ -8,7 +8,7 @@ export default function authorize(roles: any = []) {
     if (typeof roles === 'string') {
         roles = [roles];
     }
-
+    
     return [
         // use requestProperty: 'user' to put decoded token in req.user to match legacy express-jwt behaviour
         jwt({ secret, algorithms: ['HS256'], requestProperty: 'user' }),
@@ -17,7 +17,7 @@ export default function authorize(roles: any = []) {
             if (!account || (roles.length && !roles.includes(account.role))) {
                 return res.status(401).json({ message: 'Unauthorized' });
             }
-
+            
             req.user.role = account.role;
             const refreshTokens = await account.getRefreshTokens();
             req.user.ownsToken = (token: any) => !!refreshTokens.find((x: any) => x.token === token);
