@@ -1,5 +1,5 @@
-// src/_helpers/role.ts
-export enum Role {
-    Admin = 'Admin',
-    User = 'User'
+// _helpers/role.ts
+export default {
+    Admin: 'Admin',
+    User: 'User'
 }

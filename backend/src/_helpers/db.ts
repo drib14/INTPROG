@@ -1,31 +1,56 @@
-// src/_helpers/db.ts
 import config from '../../config.json';
 import mysql from 'mysql2/promise';
 import { Sequelize } from 'sequelize';
+import accountModel from '../accounts/account.model';
+import refreshTokenModel from '../accounts/refresh-token.model';
+import departmentModel from '../departments/department.model';
+import employeeModel from '../employees/employee.model';
+import requestModel from '../requests/request.model';
 
-export interface Database {
-    User: any; // We'll type this properly after creating the model
-}
+const db: any = {};
+export default db;
 
-export const db: Database = {} as Database;
+initialize();
 
-export async function initialize(): Promise<void> {
+async function initialize() {
     const { host, port, user, password, database } = config.database;
-    
-    // Create database if it doesn't exist
     const connection = await mysql.createConnection({ host, port, user, password });
     await connection.query(`CREATE DATABASE IF NOT EXISTS \`${database}\`;`);
-    await connection.end();
-    
-    // Connect to database with Sequelize
-    const sequelize = new Sequelize(database, user, password, { dialect: 'mysql' });
-    
-    // Initialize models
-    const { default: userModel } = await import('../users/user.model');
-    db.User = userModel(sequelize);
-    
-    // Sync models with database
+
+    const sequelize = new Sequelize(database, user, password, {
+        dialect: 'mysql',
+        host,
+        port,
+        logging: false
+    });
+
+    db.Account = accountModel(sequelize);
+    db.RefreshToken = refreshTokenModel(sequelize);
+    db.Department = departmentModel(sequelize);
+    db.Employee = employeeModel(sequelize);
+    db.Request = requestModel(sequelize);
+
+    // Relationships
+    db.Account.hasMany(db.RefreshToken, { onDelete: 'CASCADE' });
+    db.RefreshToken.belongsTo(db.Account);
+
     await sequelize.sync({ alter: true });
-    
-    console.log('✅ Database initialized and models synced');
+
+    // Seed default admin if database has no accounts
+    const accountCount = await db.Account.count();
+    if (accountCount === 0) {
+        const bcrypt = await import('bcryptjs');
+        const hashedPassword = await bcrypt.default.hash('Password123!', 10);
+        await db.Account.create({
+            email: 'admin@example.com',
+            passwordHash: hashedPassword,
+            title: 'Mr',
+            firstName: 'System',
+            lastName: 'Admin',
+            acceptTerms: true,
+            role: 'Admin',
+            verified: new Date()
+        });
+        console.log('✅ Default admin account seeded: admin@example.com / Password123!');
+    }
 }
