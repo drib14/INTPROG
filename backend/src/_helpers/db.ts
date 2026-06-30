@@ -1,11 +1,10 @@
+// src/_helpers/db.ts
 import config from '../../config.json';
 import mysql from 'mysql2/promise';
 import { Sequelize } from 'sequelize';
 
-import { User } from '../users/user.model';
-
 export interface Database {
-    User: typeof User;
+    User: any; // We'll type this properly after creating the model
 }
 
 export const db: Database = {} as Database;
@@ -19,11 +18,7 @@ export async function initialize(): Promise<void> {
     await connection.end();
     
     // Connect to database with Sequelize
-    const sequelize = new Sequelize(database, user, password, { 
-        dialect: 'mysql', 
-        host, 
-        port 
-    });
+    const sequelize = new Sequelize(database, user, password, { dialect: 'mysql' });
     
     // Initialize models
     const { default: userModel } = await import('../users/user.model');

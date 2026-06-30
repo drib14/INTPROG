@@ -84,7 +84,7 @@ export default function (sequelize: Sequelize): typeof User {
             sequelize,
             modelName: 'User',
             tableName: 'users',
-            timestamps: true,
+            timestamps: true, // // ✅ Ensure this is true (default)
             defaultScope: {
                 attributes: { exclude: ['passwordHash'] },
             },

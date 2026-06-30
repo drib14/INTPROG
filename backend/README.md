@@ -35,6 +35,8 @@ This is the backend of the application converted to TypeScript, using Sequelize 
 
 3. Run in Development Mode (with hot reloading via `nodemon` + `ts-node`):
    ```bash
+   npm run dev
+   # or
    npm run start:dev
    ```
 
