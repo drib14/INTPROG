@@ -220,117 +220,58 @@ function basicDetails(account: any) {
 }
 
 async function sendVerificationEmail(account: any, origin: any) {
-    let heading = 'Verify Your Email';
-    let bodyText = `Welcome to the Portal! We're excited to have you join us. Please verify your email address to activate your account and start using the dashboard:`;
-    let actionSection = '';
-
+    let message;
     if (origin) {
         const verifyUrl = `${origin}/account/verify-email?token=${account.verificationToken}`;
-        actionSection = `
-            <div style="text-align: center; margin: 32px 0;">
-                <a href="${verifyUrl}" style="background-color: #3b82f6; color: #ffffff; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-size: 15px; font-weight: 600; display: inline-block; box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2), 0 2px 4px -2px rgba(59, 130, 246, 0.2);">Verify Email Address</a>
-            </div>
-            <p style="color: #64748b; font-size: 13px; word-break: break-all; text-align: center; margin: 0;">
-                Or copy and paste this link into your browser:<br/>
-                <a href="${verifyUrl}" style="color: #3b82f6; text-decoration: underline;">${verifyUrl}</a>
-            </p>
-        `;
+        message = `<p>Please click the below link to verify your email address:</p>
+                   <p><a href="${verifyUrl}">${verifyUrl}</a></p>`;
     } else {
-        actionSection = `
-            <p style="color: #64748b; font-size: 14px; margin-bottom: 8px; font-weight: 500;">Use the following verification token in your request:</p>
-            <div style="background-color: #f1f5f9; padding: 16px; border-radius: 8px; font-family: monospace; font-size: 16px; font-weight: bold; color: #0f172a; text-align: center; margin: 16px 0; border: 1px solid #e2e8f0; letter-spacing: 0.5px;">
-                ${account.verificationToken}
-            </div>
-        `;
+        message = `<p>Please use the below token to verify your email address with the <code>/accounts/verify-email</code> api route:</p>
+                   <p><code>${account.verificationToken}</code></p>`;
     }
 
     await sendEmail({
         to: account.email,
-        subject: 'Portal Admin Service - Verify Email',
-        html: getEmailHtmlTemplate(heading, bodyText, actionSection)
+        subject: 'Sign-up Verification API - Verify Email',
+        html: `<h4>Verify Email</h4>
+               <p>Thanks for registering!</p>
+               ${message}`
     });
 }
 
 async function sendAlreadyRegisteredEmail(email: any, origin: any) {
-    let heading = 'Email Already Registered';
-    let bodyText = `We received a request to register an account using the email address <strong>${email}</strong>, which is already registered in our system.`;
-    let actionSection = '';
-
+    let message;
     if (origin) {
-        actionSection = `
-            <p style="color: #64748b; font-size: 14px; margin-bottom: 24px; text-align: center;">If you forgot your password or need to recover your account, you can reset it below:</p>
-            <div style="text-align: center; margin: 24px 0;">
-                <a href="${origin}/account/forgot-password" style="background-color: #ef4444; color: #ffffff; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-size: 15px; font-weight: 600; display: inline-block; box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.2);">Reset Password</a>
-            </div>
-        `;
+        message = `<p>If you don't know your password please visit the <a href="${origin}/account/forgot-password">forgot password</a> page.</p>`;
     } else {
-        actionSection = `
-            <p style="color: #64748b; font-size: 14px; margin-top: 16px;">If you forgot your password, please use the <code>/accounts/forgot-password</code> API route.</p>
-        `;
+        message = `<p>If you don't know your password you can reset it via the <code>/accounts/forgot-password</code> api route.</p>`;
     }
 
     await sendEmail({
         to: email,
-        subject: 'Portal Admin Service - Email Already Registered',
-        html: getEmailHtmlTemplate(heading, bodyText, actionSection)
+        subject: 'Sign-up Verification API - Email Already Registered',
+        html: `<h4>Email Already Registered</h4>
+               <p>Your email <strong>${email}</strong> is already registered.</p>
+               ${message}`
     });
 }
 
 async function sendPasswordResetEmail(account: any, origin: any) {
-    let heading = 'Reset Your Password';
-    let bodyText = `We received a request to reset the password for your portal account. This password reset token or link will remain valid for exactly 1 day.`;
-    let actionSection = '';
-
+    let message;
     if (origin) {
         const resetUrl = `${origin}/account/reset-password?token=${account.resetToken}`;
-        actionSection = `
-            <div style="text-align: center; margin: 32px 0;">
-                <a href="${resetUrl}" style="background-color: #f59e0b; color: #ffffff; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-size: 15px; font-weight: 600; display: inline-block; box-shadow: 0 4px 6px -1px rgba(245, 158, 11, 0.2);">Reset Password</a>
-            </div>
-            <p style="color: #64748b; font-size: 13px; word-break: break-all; text-align: center; margin: 0;">
-                Or copy and paste this link into your browser:<br/>
-                <a href="${resetUrl}" style="color: #f59e0b; text-decoration: underline;">${resetUrl}</a>
-            </p>
-        `;
+        message = `<p>Please click the below link to reset your password, the link will be valid for 1 day:</p>
+                   <p><a href="${resetUrl}">${resetUrl}</a></p>`;
     } else {
-        actionSection = `
-            <p style="color: #64748b; font-size: 14px; margin-bottom: 8px; font-weight: 500;">Use the following password reset token in your request:</p>
-            <div style="background-color: #f1f5f9; padding: 16px; border-radius: 8px; font-family: monospace; font-size: 16px; font-weight: bold; color: #0f172a; text-align: center; margin: 16px 0; border: 1px solid #e2e8f0; letter-spacing: 0.5px;">
-                ${account.resetToken}
-            </div>
-        `;
+        message = `<p>Please use the below token to reset your password with the <code>/accounts/reset-password</code> api route:</p>
+                   <p><code>${account.resetToken}</code></p>`;
     }
 
     await sendEmail({
         to: account.email,
-        subject: 'Portal Admin Service - Reset Password',
-        html: getEmailHtmlTemplate(heading, bodyText, actionSection)
+        subject: 'Sign-up Verification API - Reset Password',
+        html: `<h4>Reset Password Email</h4>
+               <p>Please use the below token to reset your password with the /accounts/reset-password api route:</p>
+               ${message}`
     });
-}
-
-function getEmailHtmlTemplate(heading: string, bodyText: string, actionSection: string) {
-    return `
-        <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f8fafc; padding: 40px 20px; color: #0f172a; min-height: 100%;">
-            <div style="max-width: 580px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.05); overflow: hidden;">
-                <!-- Header -->
-                <div style="background-color: #0f172a; padding: 32px; text-align: center;">
-                    <h2 style="color: #ffffff; margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.5px; font-family: sans-serif;">Portal Admin Service</h2>
-                </div>
-                
-                <!-- Body -->
-                <div style="padding: 40px 32px;">
-                    <h3 style="margin-top: 0; margin-bottom: 16px; font-size: 18px; font-weight: 600; color: #0f172a;">${heading}</h3>
-                    <p style="color: #64748b; font-size: 15px; line-height: 24px; margin-bottom: 24px; margin-top: 0;">${bodyText}</p>
-                    
-                    ${actionSection}
-                    
-                    <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 32px 0;" />
-                    
-                    <p style="color: #94a3b8; font-size: 12px; line-height: 18px; margin: 0; text-align: center;">
-                        This is an automated message from the Portal Admin System. Please do not reply to this email directly.
-                    </p>
-                </div>
-            </div>
-        </div>
-    `;
 }
