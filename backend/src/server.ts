@@ -37,16 +37,24 @@ app.use('/stats', statsController);
 
 // --- Legacy Auth Compatibility Endpoints for Frontend (avoid modifying frontend script.js where possible) ---
 
-// Login Endpoint
 app.post('/login', async (req, res, next) => {
     const { email, password } = req.body;
     try {
+        const account = await db.Account.scope('withHash').findOne({ where: { email } });
+        if (!account || !(await bcrypt.compare(password, account.passwordHash))) {
+            return res.status(400).json({ message: 'Email or password is incorrect' });
+        }
+        
+        if (!account.isVerified) {
+            return res.status(403).json({ unverified: true, message: 'Email address is not verified.' });
+        }
+
         const result = await accountService.authenticate({ email, password, ipAddress: req.ip });
-        // Return matching format expected by frontend AuthService.login
         res.json({ 
             token: result.jwtToken, 
             user: {
                 ...result,
+                role: result.role ? result.role.toLowerCase() : result.role,
                 verified: result.isVerified
             } 
         });
@@ -58,6 +66,11 @@ app.post('/login', async (req, res, next) => {
 // Register Endpoint
 app.post('/register', async (req, res, next) => {
     try {
+        if (req.body && typeof req.body.role === 'string') {
+            const r = req.body.role.toLowerCase();
+            if (r === 'admin') req.body.role = 'Admin';
+            else if (r === 'user') req.body.role = 'User';
+        }
         await accountService.register({ ...req.body, title: 'Mr', acceptTerms: true }, req.get('origin'));
         res.json({ message: 'Registration successful' });
     } catch (err) {
@@ -86,7 +99,10 @@ app.post('/verify', async (req, res, next) => {
 app.put('/profile', authorize(), async (req: any, res, next) => {
     try {
         const account = await accountService.update(req.user.id, req.body);
-        res.json(account);
+        res.json({
+            ...account,
+            role: account.role ? account.role.toLowerCase() : account.role
+        });
     } catch (err) {
         next(err);
     }
@@ -98,6 +114,7 @@ app.get('/me', authorize(), async (req: any, res, next) => {
         const account = await accountService.getById(req.user.id);
         res.json({
             ...account,
+            role: account.role ? account.role.toLowerCase() : account.role,
             verified: account.isVerified
         });
     } catch (err) {

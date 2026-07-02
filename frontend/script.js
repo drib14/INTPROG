@@ -314,7 +314,8 @@
     },
 
     getActiveRoute() {
-      return (location.hash || "#/").replace("#", "");
+      const hash = (location.hash || "#/").replace("#", "");
+      return hash.split("?")[0];
     },
 
     handleRoute() {
@@ -453,6 +454,26 @@
           break;
         case "/verify-email":
           this.renderVerifyEmail();
+          break;
+        case "/forgot-password":
+          document.getElementById("forgotPasswordForm").reset();
+          document.getElementById("forgotPasswordForm").classList.remove("was-validated");
+          break;
+        case "/reset-password":
+          document.getElementById("publicResetPasswordForm").reset();
+          document.getElementById("publicResetPasswordForm").classList.remove("was-validated");
+          // Check query parameters to pre-fill token input
+          const hashParts = location.hash.split("?");
+          if (hashParts.length > 1) {
+            const params = new URLSearchParams(hashParts[1]);
+            const token = params.get("token");
+            if (token) {
+              setTimeout(() => {
+                const tokenInput = document.getElementById("resetToken");
+                if (tokenInput) tokenInput.value = token;
+              }, 50);
+            }
+          }
           break;
         case "/login":
           this.renderLoginInit();
@@ -1153,6 +1174,8 @@
       this.bindSubmit("loginForm", (e) => this.handleLogin(e));
       this.bindSubmit("editProfileForm", (e) => this.handleEditProfile(e));
       this.bindSubmit("resetPasswordForm", (e) => this.handleResetPassword(e));
+      this.bindSubmit("forgotPasswordForm", (e) => this.handleForgotPassword(e));
+      this.bindSubmit("publicResetPasswordForm", (e) => this.handlePublicResetPassword(e));
       this.bindSubmit("addAccountForm", (e) => this.handleSaveAccount(e));
       this.bindSubmit("addDepartmentForm", (e) => this.handleSaveDepartment(e));
       this.bindSubmit("addEmployeeForm", (e) => this.handleSaveEmployee(e));
@@ -1540,6 +1563,49 @@
         } else {
           const data = await res.json();
           UI.toast(data.message || "Reset failed", "danger");
+        }
+      } catch (err) {
+        UI.toast("Network error", "danger");
+      }
+    },
+
+    async handleForgotPassword(e) {
+      const email = document.getElementById("forgotEmail").value.trim().toLowerCase();
+      try {
+        const res = await fetch(`${API_URL}/accounts/forgot-password`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          UI.toast("Please check your Ethereal mailbox for password reset token.", "success");
+          Router.navigateTo("#/reset-password");
+        } else {
+          UI.toast(data.message || "Failed to process forgot password request", "danger");
+        }
+      } catch (err) {
+        UI.toast("Network error", "danger");
+      }
+    },
+
+    async handlePublicResetPassword(e) {
+      const token = document.getElementById("resetToken").value.trim();
+      const password = document.getElementById("resetPassword").value;
+      const confirmPassword = document.getElementById("resetConfirmPassword").value;
+
+      try {
+        const res = await fetch(`${API_URL}/accounts/reset-password`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token, password, confirmPassword })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          UI.toast("Password reset successful. You can now login.", "success");
+          Router.navigateTo("#/login");
+        } else {
+          UI.toast(data.message || "Failed to reset password", "danger");
         }
       } catch (err) {
         UI.toast("Network error", "danger");

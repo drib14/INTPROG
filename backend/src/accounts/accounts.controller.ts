@@ -19,8 +19,8 @@ router.post('/reset-password', resetPasswordSchema, resetPassword);
 router.get('/', authorize(Role.Admin), getAll);
 router.get('/me', authorize(), getMe);
 router.get('/:id', authorize(), getById);
-router.post('/', authorize(Role.Admin), createSchema, create);
-router.put('/:id', authorize(), updateSchema, update);
+router.post('/', authorize(Role.Admin), normalizeRole, createSchema, create);
+router.put('/:id', authorize(), normalizeRole, updateSchema, update);
 router.delete('/:id', authorize(), _delete);
 
 export default router;
@@ -39,7 +39,7 @@ function authenticate(req: any, res: any, next: any) {
     accountService.authenticate({ email, password, ipAddress })
         .then(({ refreshToken, ...account }) => {
             setTokenCookie(res, refreshToken);
-            res.json(account);
+            res.json(mapAccountRole(account));
         })
         .catch(next);
 }
@@ -50,7 +50,7 @@ function refreshToken(req: any, res: any, next: any) {
     accountService.refreshToken({ token, ipAddress })
         .then(({ refreshToken, ...account }) => {
             setTokenCookie(res, refreshToken);
-            res.json(account);
+            res.json(mapAccountRole(account));
         })
         .catch(next);
 }
@@ -154,7 +154,7 @@ function resetPassword(req: any, res: any, next: any) {
 
 function getAll(req: any, res: any, next: any) {
     accountService.getAll()
-        .then(accounts => res.json(accounts))
+        .then(accounts => res.json(accounts.map(mapAccountRole)))
         .catch(next);
 }
 
@@ -165,7 +165,7 @@ function getById(req: any, res: any, next: any) {
     }
     
     accountService.getById(req.params.id)
-        .then(account => account ? res.json(account) : res.sendStatus(404))
+        .then(account => account ? res.json(mapAccountRole(account)) : res.sendStatus(404))
         .catch(next);
 }
 
@@ -184,7 +184,7 @@ function createSchema(req: any, res: any, next: any) {
 
 function create(req: any, res: any, next: any) {
     accountService.create(req.body)
-        .then(account => res.json(account))
+        .then(account => res.json(mapAccountRole(account)))
         .catch(next);
 }
 
@@ -220,7 +220,7 @@ function update(req: any, res: any, next: any) {
             }
             return accountService.update(account.id, req.body);
         })
-        .then(account => res.json(account))
+        .then(account => res.json(mapAccountRole(account)))
         .catch(next);
 }
 
@@ -252,6 +252,23 @@ function setTokenCookie(res: any, token: any) {
 
 function getMe(req: any, res: any, next: any) {
     accountService.getById(req.user.id)
-        .then(account => res.json(account))
+        .then(account => res.json(mapAccountRole(account)))
         .catch(next);
+}
+
+function normalizeRole(req: any, res: any, next: any) {
+    if (req.body && typeof req.body.role === 'string') {
+        const r = req.body.role.toLowerCase();
+        if (r === 'admin') req.body.role = Role.Admin;
+        else if (r === 'user') req.body.role = Role.User;
+    }
+    next();
+}
+
+function mapAccountRole(account: any) {
+    if (!account) return account;
+    if (account.role) {
+        account.role = account.role.toLowerCase();
+    }
+    return account;
 }

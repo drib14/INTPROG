@@ -341,11 +341,10 @@
                 </div>
 
                 <div class="mb-4">
-                  <label
-                    for="loginPassword"
-                    class="form-label small-label text-uppercase fw-semibold text-muted"
-                    >Password</label
-                  >
+                  <div class="d-flex justify-content-between align-items-center mb-1">
+                    <label for="loginPassword" class="form-label small-label text-uppercase fw-semibold text-muted m-0">Password</label>
+                    <a href="#/forgot-password" class="small text-decoration-none text-primary">Forgot password?</a>
+                  </div>
                   <input
                     type="password"
                     id="loginPassword"
@@ -382,6 +381,66 @@
                   Account
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="forgot-password-page" class="page">
+        <div class="row justify-content-center">
+          <div class="col-md-6 col-lg-5">
+            <div class="auth-card p-4 border rounded shadow-sm bg-card">
+              <h2 class="fw-bold mb-3 text-center">Forgot Password</h2>
+              <p class="text-muted text-center mb-4 small">Enter your registered email address to receive password reset instructions.</p>
+              
+              <form id="forgotPasswordForm" novalidate>
+                <div class="mb-4">
+                  <label for="forgotEmail" class="form-label small-label text-uppercase fw-semibold text-muted">Email Address</label>
+                  <input type="email" id="forgotEmail" class="form-control" placeholder="name@example.com" required />
+                  <div class="invalid-feedback">Please enter a valid email address.</div>
+                </div>
+                
+                <div class="d-flex flex-column gap-2">
+                  <button type="submit" class="btn btn-warning w-100 fw-semibold text-white">Send Reset Instructions</button>
+                  <a href="#/login" class="btn btn-outline-secondary w-100 text-center">Back to Login</a>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="reset-password-page" class="page">
+        <div class="row justify-content-center">
+          <div class="col-md-6 col-lg-5">
+            <div class="auth-card p-4 border rounded shadow-sm bg-card">
+              <h2 class="fw-bold mb-3 text-center">Reset Password</h2>
+              <p class="text-muted text-center mb-4 small">Please enter your reset token and choose a new password.</p>
+              
+              <form id="publicResetPasswordForm" novalidate>
+                <div class="mb-3">
+                  <label for="resetToken" class="form-label small-label text-uppercase fw-semibold text-muted">Reset Token</label>
+                  <input type="text" id="resetToken" class="form-control" placeholder="Enter token from email" required />
+                  <div class="invalid-feedback">Reset token is required.</div>
+                </div>
+
+                <div class="mb-3">
+                  <label for="resetPassword" class="form-label small-label text-uppercase fw-semibold text-muted">New Password</label>
+                  <input type="password" id="resetPassword" class="form-control" placeholder="Minimum 6 characters" minlength="6" required />
+                  <div class="invalid-feedback">Password must be at least 6 characters.</div>
+                </div>
+
+                <div class="mb-4">
+                  <label for="resetConfirmPassword" class="form-label small-label text-uppercase fw-semibold text-muted">Confirm Password</label>
+                  <input type="password" id="resetConfirmPassword" class="form-control" placeholder="Confirm your password" required />
+                  <div class="invalid-feedback">Please confirm your password.</div>
+                </div>
+                
+                <div class="d-flex flex-column gap-2">
+                  <button type="submit" class="btn btn-primary w-100 fw-semibold">Save New Password</button>
+                  <a href="#/login" class="btn btn-outline-secondary w-100 text-center">Cancel</a>
+                </div>
+              </form>
             </div>
           </div>
         </div>
